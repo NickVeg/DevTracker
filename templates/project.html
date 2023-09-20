@@ -1,0 +1,119 @@
+{% extends "base_nav.html" %}
+
+{% block title %} Project: {{ project.summary.ProjectID }} {% endblock %}
+
+{% block content %}
+<h2 class="text-center">Project: {{ project_summary.ProjectID }}</h2>
+<div class="container-full">
+    <div class="row">
+        <!-- General Information -->
+        <div class="col-6">
+            <h5>General Information</h5>
+            {% if project_summary.NumAuthors %}
+                <p><strong>Number of Authors:</strong> {{ project_summary.NumAuthors }}</p>
+            {% endif %}
+            {% if project_summary.NumCommits %}
+                <p><strong>Number of Commits:</strong> {{ project_summary.NumCommits }}</p>
+            {% endif %}
+            {% if project_summary.NumBlobs %}
+                <p><strong>Number of Blobs:</strong> {{ project_summary.NumBlobs }}</p>
+            {% endif %}
+            {% if project_summary.NumForks %}
+                <p><strong>Number of Forks:</strong> {{ project_summary.NumForks }}</p>
+            {% endif %}
+            {% if project_summary.NumStars %}
+                <p><strong>Number of Stars:</strong> {{ project_summary.NumStars }}</p>
+            {% endif %}
+        </div>
+
+        <!-- File Information -->
+        <div class="col-6">
+            <h5>File Information</h5>
+            {% if project_summary.FileInfo %}
+                <ul class="list-group">
+                    {% for file_type, count in project_summary.FileInfo.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ file_type }}
+                            <span class="badge badge-primary badge-pill">{{ count }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No file information available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Community Information -->
+        <div class="col-6">
+            <h5>Community Information</h5>
+            {% if project_summary.Core %}
+                <ul class="list-group">
+                    {% for contributor, count in project_summary.Core.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ contributor }}
+                            <span class="badge badge-primary badge-pill">{{ count }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No community information available.</p>
+            {% endif %}
+        </div>
+
+        <!-- Activity Over Time -->
+        <div class="col-6">
+            <h5>Activity Over Time</h5>
+            {% if project_summary.MonNauth and project_summary.MonNcmt %}
+                <!-- We'll use Chart.js to create a line chart for activity over time -->
+                <canvas id="activityChart"></canvas>
+                <script>
+                    var ctx = document.getElementById('activityChart').getContext('2d');
+                    var activityChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: {{ project_summary.MonNauth_keys|tojson }},
+                            datasets: [
+                                {
+                                    label: '# of Authors',
+                                    data: {{ project_summary.MonNauth_values|tojson }},
+                                    borderColor: '#28a745',
+                                    fill: false
+                                },
+                                {
+                                    label: '# of Commits',
+                                    data: {{ project_summary.MonNcmt_values|tojson }},
+                                    borderColor: 'black',
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                xAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: 'Month'
+                                    }
+                                }],
+                                yAxes: [{
+                                    display: true,
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: 'Count'
+                                    }
+                                }]
+                            }
+                        }
+                    });
+                </script>
+            {% else %}
+                <p>No activity information available.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

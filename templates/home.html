@@ -1,0 +1,22 @@
+{% extends "base_nav.html" %}
+
+{% block content %}
+<div class="container h-100 d-flex justify-content-center align-items-center">
+    <div class="row justify-content-center">
+        <div class="col-12 text-center">
+            <h1>Search for a Developer</h1>
+        </div>
+        <div class="col-lg-6 col-md-8 col-sm-10">
+            <form class="mt-4" method="POST" action="{{ url_for('search') }}">
+                <div class="input-group input-group-lg mb-3">
+                    <input type="text" class="form-control" id="author_name" name="author_name" placeholder="Enter Developer's Name..." aria-label="Developer's Name" required>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Author Profile{% endblock %}
+
+{% block content %}
+    <h2>Author Profile</h2>
+
+    <h3>Author ID</h3>
+    <p>{{ profile.AuthorName }}</p>
+
+    
+    
+
+    <h3>Number of Files</h3>
+    <p>{{ profile.num_files }}</p>
+
+    <h3>Number of Projects</h3>
+    <p>{{ profile.num_projects }}</p>
+
+    <!-- Place for the Plotly chart -->
+    <div id="NewLangChart"></div>
+    <!-- Date Filtering -->
+    <label for="fromDate">From:</label>
+    <input type="date" id="fromDate">
+    <label for="toDate">To:</label>
+    <input type="date" id="toDate">
+    <button id="filterButton">Filter</button>
+
+    
+
+    <!-- Script for charts an graphs -->
+    <script>
+        let languageData = {{ profile.language_use_over_time | tojson }};
+        console.log(languageData);
+        let plotDiv = document.getElementById('NewLangChart');
+        let traces = [];
+        let dateFrom, dateTo;
+
+        for (let language in languageData) {
+            let trace = {
+                x: Object.keys(languageData[language]),
+                y: Object.values(languageData[language]),
+                name: language,
+                mode: 'lines+markers'
+            };
+            traces.push(trace);
+        }
+
+        Plotly.newPlot('NewLangChart', traces);
+
+        function filterData() {
+            dateFrom = new Date($('#fromDate').val());
+            dateTo = new Date($('#toDate').val());
+
+            let filteredTraces = [];
+
+            for (let language in languageData) {
+                let filteredX = [], filteredY = [];
+                for (let date in languageData[language]) {
+                    let dateObj = new Date(date);
+                    if (dateObj >= dateFrom && dateObj <= dateTo) {
+                        filteredX.push(date);
+                        filteredY.push(languageData[language][date]);
+                    }
+                }
+
+                let trace = {
+                    x: filteredX,
+                    y: filteredY,
+                    name: language,
+                    mode: 'lines+markers'
+                };
+                filteredTraces.push(trace);
+            }
+
+            Plotly.newPlot('NewLangChart', filteredTraces);
+        }
+
+        $('#filterButton').click(function() {
+            filterData();
+        });
+    </script>
+ 
+
+
+
+
+        
+   
+
+    </script>
+    
+    
+{% endblock %}

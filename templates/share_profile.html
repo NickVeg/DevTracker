@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    
+    <!-- CSS -->
+    <!--Bootstrap CSS link-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.css"/>
+    <!-- Custom styles should come after Bootstrap -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Scripts -->
+    <!-- jQuery -->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!-- DataTables JS -->
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Vis-Network JS -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- Plotly JS -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Custom scripts -->
+    <script type="text/javascript">
+        let profileData = {{ profile | tojson }};
+        console.log(profileData)
+    </script>
+</head>
+<body>
+    
+        <!-- Rest of the components will follow here in their respective rows and columns-->
+
+        
+    </div>
+
+    <!-- JavaScripts -->
+    <!-- jQuery, Popper.js, Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-light bg-light">
+        <a class="navbar-brand" href="{{ url_for('home') }}">
+            <!--<img src="/path/to/logo.png" width="30" height="30" class="d-inline-block align-top" alt="">-->
+            DevTracker
+        </a>
+    </nav>
+
+    <!-- Author Name and email-->
+    <h1 class="display-4">{{ profile.AuthorName.split("<")[0].strip() }}</h1>
+    <p class="lead">{{ profile.AuthorName.split("<")[1].replace(">", "").strip() if "<" in profile.AuthorName else "" }}</p>
+
+    <!-- Data Cards -->
+    <div class="row">
+        <div class="col-3">
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Total Commits</h5>
+                    <p class="card-text">The total number of commits made by the author.</p>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ profile.num_commits }}</h6>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-3">
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Total Projects</h5>
+                    <p class="card-text">The total number of projects the author has contributed to.</p>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ profile.num_projects }}</h6>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-3">
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Total Files</h5>
+                    <p class="card-text">The total number of files the author has worked on.</p>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ profile.num_files }}</h6>
+                </div>
+            </div>
+        </div>
+    
+        <div class="col-3 d-flex flex-column justify-content-center align-items-center">
+            <div class="card bg-light border-dark text-dark p-3" style="width: 22rem;">
+                {% if profile['job_role'] == 'Frontend' %}
+                    <img src="/static/images/frontend.jpg" class="card-img-top" alt="Frontend Developer">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: Frontend Developer</h5>
+                        <p class="card-text">Specializes in building the user interface and user experience of an application.</p>
+                    </div>
+                {% elif profile['job_role'] == 'Backend' %}
+                    <img src="/static/images/backend.jpg" class="card-img-top" alt="Backend Developer">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: Backend Developer</h5>
+                        <p class="card-text">Focuses on constructing the server-side logic and database interaction of applications.</p>
+                    </div>        
+                {% elif profile['job_role'] == 'Mobile' %}
+                    <img src="/static/images/mobile.jpg" class="card-img-top" alt="Mobile Developer">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: Mobile Developer</h5>
+                        <p class="card-text">Develops dynamic and user-friendly applications for various mobile platforms.</p>
+                    </div>
+                {% elif profile['job_role'] == 'DevOps' %}
+                    <img src="/static/images/devops.jpg" class="card-img-top" alt="DevOps">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: DevOps</h5>
+                        <p class="card-text">Concentrates on optimizing system infrastructure and streamlining software development and deployment processes.</p>
+                    </div>        
+                {% elif profile['job_role'] == 'DataScientist' %}
+                    <img src="/static/images/datascientist.jpg" class="card-img-top" alt="Data Scientist">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: Data Scientist</h5>
+                        <p class="card-text">Analyses complex datasets to extract insights and influence strategic decisions.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Aliases -->
+    <div class="row">        
+        {% if profile.aliases %}
+        <h2 class="display-4">Aliases</h2>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for alias in profile.aliases %}
+            <tr>
+                <td>{{ alias.split("<")[0].strip() }}</td>
+                <td>{{ alias.split("<")[1].replace(">", "").strip() if "<" in alias else "" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <!--Langs-Libs-->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Table for libraries data -->
+            <div class="col-lg-6">
+                <table id="librariesTable" class="table table-striped table-bordered" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Library Name</th>
+                            <th>Programming Language</th>
+                            <th>Count</th>
+                                
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be inserted here using DataTables -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Script for populating the table with data -->
+            <script>
+                let popularLibraries =  {{ profile.popular_libraries | tojson }}; 
+                let notMatchedLibraries = {{ profile.not_matched_libraries | tojson }};
+                let allLibraries = popularLibraries.concat(notMatchedLibraries);
+                console.log(allLibraries)
+                    
+
+                $(document).ready(function() {
+                    $('#librariesTable').DataTable( {
+                        data: allLibraries,
+                        columns: [
+                            { data: 'library_name' },
+                            { data: 'programming_language' },
+                            { data: 'count' }
+                                
+                        ],
+                        pageLength: 10,
+                        order: [[2, 'desc']],
+                        responsive: true
+                    } );
+                } );
+            </script>
+            <!-- Canvas for pie chart -->
+            <div class="col-lg-6">
+                <canvas id="fileInfoChart"></canvas>
+                <script>
+                    // Fetch the fileInfo from the Flask template
+                    var fileInfo = profileData['file_info'];
+                    var fileInfoLabels = Object.keys(fileInfo);
+                    var fileInfoData = Object.values(fileInfo);
+                
+                    var ctx = document.getElementById('fileInfoChart').getContext('2d');
+                    var fileInfoChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: fileInfoLabels,
+                            datasets: [{
+                                data: fileInfoData,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',  // red
+                                    'rgba(54, 162, 235, 0.2)',  // blue
+                                    'rgba(255, 206, 86, 0.2)',  // yellow
+                                    'rgba(75, 192, 192, 0.2)',  // green
+                                    'rgba(153, 102, 255, 0.2)',  // purple
+                                    'rgba(255, 159, 64, 0.2)'   // orange
+                                    // Add more colors if you have more than 6 programming languages
+                                ]
+                            }]
+                        }
+                    });
+                </script>
+            </div>        
+        </div>
+    </div>    
+
+</body>
+</html>

@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}Author Profile{% endblock %}
+
+{% block content %}
+    <h2>Author Profile</h2>
+
+    <h3>Author ID</h3>
+    <p>{{ profile.AuthorName }}</p>
+
+    <h2>Filter by date:</h2>
+    <form method="date-filters-form">
+        <label for="start_date">Start date:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+        <label for="end_date">End date:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+        <input type="submit" value="Filter">
+        <input type="hidden" id="author_id" value="{{ profile.AuthorName}}">
+    </form>
+
+    <select id="projects-form" multiple style="width:200px;height:100px;">
+        {% for project, commits in profile.projects_and_commits.items() %}
+            <option value="{{ project }}">{{ project }}</option>
+        {% endfor %}
+    </select>
+
+    
+    
+
+    <h3>Number of Files</h3>
+    <p>{{ profile.num_files }}</p>
+
+    <h3>Number of Projects</h3>
+    <p>{{ profile.num_projects }}</p>
+
+    <h2>Projects and Commits</h2>
+    <table id="projects-commits-table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Number of commits</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!--Populated by JavaScript-->
+        </tbody>
+    </table>
+
+    <h3>Libraries Used</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Library</th>
+                <th scope="col">Programming Language</th>
+                <th scope="col">Count</th>
+                <th scope="col">Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for library in profile.popular_libraries %}
+            <tr>
+                <td>{{ library.library_name }}</td>
+                <td>{{ library.programming_language }}</td>
+                <td>{{ library.count }}</td>
+                <td>{{ library.description }}</td>
+            </tr>
+            {% endfor %}
+            {% for library in profile.not_matched_libraries %}
+            <tr>
+                <td>{{ library.library_name }}</td>
+                <td>{{ library.programming_language }}</td>
+                <td>{{ library.count }}</td>
+                <td>N/A</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+      
+
+    <!-- Add other fields similarly -->
+
+    <!-- Date filter -->
+    <input type="date" id="dateFilter">
+
+    <!-- Place for Chart-->
+    <h3>Language Use Over Time</h3>
+    <canvas id="languageChart"></canvas>
+
+    <!-- File info pie chart -->
+    <h3>File Info</h3>
+    <canvas id="fileInfoChart"></canvas>
+
+    <!--Collaboration Graph-->
+    <div id="collabNetwork" style="width: 800px; height: 400px;"></div>
+
+    <!--Task Categories Bar Chart-->
+    <div class="container">
+        <canvas id="taskCategoriesChart"></canvas>
+    </div>
+
+    <!-- Script for charts an graphs -->
+    <script>
+
+ 
+
+
+
+
+        // Projects And Commits Table
+        
+        function createOrUpdateProjectsTable(projectsAndCommits) {
+            var tableBody = document.getElementById('projects-commits-table').getElementsByTagName('tbody')[0];
+    
+            // Clear the existing rows in the table body
+            while (tableBody.firstChild) {
+                tableBody.removeChild(tableBody.firstChild);
+            }
+
+            // Add new rows for each project
+            for (var project in projectsAndCommits) {
+                var row = tableBody.insertRow();
+
+                var cell = row.insertCell();
+                cell.innerHTML = '<a href="/project/' + project + '">' + project + '</a>'; // Assuming your route for each project is '/project/{projectId}'
+
+                var cell2 = row.insertCell();
+                cell2.textContent = projectsAndCommits[project];
+            }
+        }
+        var initialProjectsAndCommits = {{ profile.projects_and_commits | tojson | safe }};
+        createOrUpdateProjectsTable(initialProjectsAndCommits);
+
+
+        // Language use over time chart
+
+        function generateChartData(languageUse) {
+            //Prepare a sorted labels array first
+            var allDates = [];
+            Object.values(languageUse).forEach(commits => {
+                allDates.push(...Object.keys(commits));
+            });
+            var labels = [...new Set(allDates)].sort();
+                
+            //Now create the datasets
+            var datasets = Object.entries(languageUse).map(([language, commits]) => {
+                var data = labels.map(month => {
+                    return commits[month] || 0;  // If there's no commit for a month, return 0
+                });
+
+                return {
+                    label: language,
+                    data: data,
+                    fill: false,
+                    borderColor: '#' + Math.floor(Math.random()*16777215).toString(16), // Random color
+                };
+            });
+
+            return {labels: labels, datasets: datasets};
+        }
+
+        // We'll define these outside of any function to make them global
+        var myChart;
+        var ctx = document.getElementById('languageChart').getContext('2d');
+
+        function createOrUpdateLanguageChart(languageUse) {
+            var chartData = generateChartData(languageUse);
+
+            // If myChart is undefined, it hasn't been created yet
+            if (!myChart) {
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        title: {
+                            display: true,
+                            text: 'Language Use Over Time'
+                        },
+                        tooltips: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        hover: {
+                            mode: 'nearest',
+                            intersect: true
+                        },
+                        scales: {
+                            xAxes: [{
+                                display: true,
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'Month'
+                                }
+                            }],
+                            yAxes: [{
+                                display: true,
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'Commits'
+                                }
+                            }]
+                        }
+                    }
+                });
+            } else {
+                // If myChart already exists, we just need to update  data
+                myChart.data = chartData;
+                myChart.update();
+            }
+        }
+        var initialLanguageUse = {{ profile.language_use_over_time | tojson | safe}};
+        createOrUpdateLanguageChart(initialLanguageUse);
+
+
+        // File Info pie chart
+        var fileInfo = {{ profile.file_info | tojson | safe }};
+        var fileInfoLabels = Object.keys(fileInfo);
+        var fileInfoData = Object.values(fileInfo);
+
+        var ctx = document.getElementById('fileInfoChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: fileInfoLabels,
+                datasets: [{
+                    data: fileInfoData,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+
+        
+        // Network Graph implementation
+
+
+        var networkData = {{ profile.collaboration_network | tojson | safe }};
+
+        // create an array with nodes
+        networkData.nodes.forEach(function(node) {          //Kainourgio
+            node.label = node.label.split("<")[0].trim(); // this will remove everything after the "<" character, effectively removing the email.
+        });
+        var nodes = new vis.DataSet(networkData.nodes);
+
+        // create an array with edges
+        networkData.edges.forEach(function(edge) {      //Kainourgio
+            edge.label = String(edge.value); 
+        });
+        var edges = new vis.DataSet(networkData.edges);
+
+        // create a network
+        var container = document.getElementById('collabNetwork');
+
+        // provide the data in the vis format
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+
+        var options = {
+            nodes: {
+                shape: 'dot',
+                size: 30,
+                font: {
+                    size: 12,
+                    color: '#000000' //Black
+                },
+                borderWidth: 2
+            },
+            edges: {
+                width: 2
+            }
+        };
+
+        // initialize your network!
+        var network = new vis.Network(container, data, options);
+
+        // Task Categories Bar chart
+       
+        var ctx = document.getElementById('taskCategoriesChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ profile.task_categories.keys() | list | tojson }},
+                datasets: [{
+                    label: '# of tasks',
+                    data: {{ profile.task_categories.values() | list | tojson }},
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+    $(document).ready(function() {
+        //Handle the date form submit
+        $('#date-filters-form').on('submit', function(event) {
+            event.preventDefault();
+
+            //Handle the submission
+            handleFormSubmission();
+        });
+
+        //Handle the projects form submit
+        $('#projects-form').on('submit', function(event) {
+            event.preventDefault();
+        
+            // Handle the submission
+            handleFormSubmission();
+        });
+
+        function handleFormSubmission() {
+            // Get the selected projects
+            var selectedProjects = $('#projects').val();
+        
+            // Get the start and end date
+            var startDate = $('#start_date').val();
+            var endDate = $('#end_date').val();
+
+            $.ajax({
+                url: '/get_filtered_data',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    author_id: $('#author_id').val(),  // Assuming you have a hidden field with the author_id
+                    start_date: startDate ? startDate : null,
+                    end_date: endDate ? endDate : null,
+                    projects: selectedProjects ? selectedProjects : null
+                }),
+                success: function(response) {
+                    // The response is a JSON object, so we can access its properties
+                    // just like of a normal JavaScript object
+                    var newLanguageUse = response.language_use_over_time;
+                    createOrUpdateLanguageChart(newLanguageUse);
+
+                    var newProjectsAndCommits = response.projects_and_commits;
+                    createOrUpdateProjectsTable(newProjectsAndCommits);
+                }
+            });
+        };
+    });
+
+    </script>
+    
+    
+{% endblock %}

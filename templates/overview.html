@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}
+Overview
+{% endblock %}
+
+{% block tab_content %}
+<div class="tab-pane fade show active" id="overview" role="tabpanel">
+    <!-- Author Name and email-->
+    <h1 class="display-4">{{ profile.AuthorName.split("<")[0].strip() }}</h1>
+    <p class="lead">{{ profile.AuthorName.split("<")[1].replace(">", "").strip() if "<" in profile.AuthorName else "" }}</p>
+
+    <!-- Data Cards -->
+    <div class="row">
+        <div class="col-4">
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Total Commits</h5>
+                    <p class="card-text">The total number of commits made by the author.</p>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ profile.num_commits }}</h6>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-4">
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Total Projects</h5>
+                    <p class="card-text">The total number of projects the author has contributed to.</p>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ profile.num_projects }}</h6>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-4">
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Total Files</h5>
+                    <p class="card-text">The total number of files the author has worked on.</p>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ profile.num_files }}</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Aliases -->
+    {% if profile.aliases %}
+    <h2 class="display-5">Aliases</h2>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for alias in profile.aliases %}
+        <tr>
+            <td>{{ alias.split("<")[0].strip() }}</td>
+            <td>{{ alias.split("<")[1].replace(">", "").strip() if "<" in alias else "" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+<div class="tab-pane fade" id="langs-libs" role="tabpanel">
+    <!-- Content for Languages & Libraries tab goes here -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Table for libraries data -->
+            <div class="col-lg-6">
+                <table id="librariesTable" class="table table-striped table-bordered" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Library Name</th>
+                            <th>Programming Language</th>
+                            <th>Count</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be inserted here using DataTables -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Script for populating the table with data -->
+            <script>
+                let popularLibraries =  {{ profile.popular_libraries | tojson }}; 
+                let notMatchedLibraries = {{ profile.not_matched_libraries | tojson }};
+                let allLibraries = popularLibraries.concat(notMatchedLibraries);
+                console.log(allLibraries)
+                
+
+                $(document).ready(function() {
+                    $('#librariesTable').DataTable( {
+                        data: allLibraries,
+                        columns: [
+                            { data: 'library_name' },
+                            { data: 'programming_language' },
+                            { data: 'count' }
+                            
+                        ],
+                        pageLength: 10,
+                        order: [[2, 'desc']],
+                        responsive: true
+                    } );
+                } );
+            </script>
+            <!-- Canvas for pie chart -->
+            <div class="col-lg-6">
+                <canvas id="fileInfoChart"></canvas>
+                <script>
+                    // Fetch the fileInfo from the Flask template
+                    var fileInfo = profileData['file_info'];
+                    var fileInfoLabels = Object.keys(fileInfo);
+                    var fileInfoData = Object.values(fileInfo);
+            
+                    var ctx = document.getElementById('fileInfoChart').getContext('2d');
+                    var fileInfoChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: fileInfoLabels,
+                            datasets: [{
+                                data: fileInfoData,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',  // red
+                                    'rgba(54, 162, 235, 0.2)',  // blue
+                                    'rgba(255, 206, 86, 0.2)',  // yellow
+                                    'rgba(75, 192, 192, 0.2)',  // green
+                                    'rgba(153, 102, 255, 0.2)',  // purple
+                                    'rgba(255, 159, 64, 0.2)'   // orange
+                                    // Add more colors if you have more than 6 programming languages
+                                ]
+                            }]
+                        }
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="tab-pane fade" id="project-history" role="tabpanel">
+    <!-- Content for Project History tab goes here -->
+    <div class="container mt-4">
+        <table class="table table-striped table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">Project</th>
+                    <th scope="col">Number of Commits</th>
+                    <th scope="col">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project, num_commits in profile.projects_and_commits.items() %}
+                    <tr>
+                        <td>{{ project }}</td>
+                        <td>{{ num_commits }}</td>
+                        <td><a href="{{ url_for('project', project_id=project) }}" class="badge badge-success">View Project</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>    
+</div>
+<div class="tab-pane fade" id="coding-trends" role="tabpanel">
+    <div class="row">
+        <!-- Days Bar chart -->
+        <div class="col-6 d-flex flex-column justify-content-center align-items-center">
+            <h2 class="mt-4">Number of Commits per Day</h2>
+            <div style="width: 100%;">
+                <canvas id="dayChart" style="height: 150px;"></canvas>
+            </div>
+            <script>
+                // Fetch the profileData from the Flask template
+                var commit_heatmap =  profileData['commit_heatmap'];
+                // Create a helper array for sorting
+                var sortedDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+                // Sort labels and data using the helper array
+                var dayLabels = Object.keys(commit_heatmap).sort((a, b) => sortedDays.indexOf(a) - sortedDays.indexOf(b));
+                var dayData = dayLabels.map(day => commit_heatmap[day]);  
+            
+            
+                var ctx = document.getElementById('dayChart').getContext('2d');
+                var dayChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: dayLabels,
+                        datasets: [{
+                            label: 'Days',
+                            data: dayData,
+                            backgroundColor: 'green', // Use a shade of green you prefer
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'x',
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            },
+                            x: {
+                                ticks: {
+                                    fontSize: 20
+                                }
+                            }
+                        }
+                    }
+                });
+
+            </script>
+        </div>
+        <!-- Content for Language Over Time tab goes here -->
+        <div class="col-6 d-flex flex-column justify-content-center align-items-center">
+            <h2 class="mt-2">Language Use Over Time</h2>        
+            <div class="col-lg-10">
+                <div id="languageChart" style="height: 700px; width: 850px;"></div>
+            </div>
+        
+            <script>
+                let languageData = {{ profile.language_use_over_time | tojson }};
+                console.log(languageData);
+                let plotDiv = document.getElementById('languageChart');
+                let traces = [];
+                let dateFrom, dateTo;
+
+                for (let language in languageData) {
+                    let trace = {
+                    x: Object.keys(languageData[language]),
+                    y: Object.values(languageData[language]),
+                    name: language,
+                    mode: 'lines+markers',
+                    marker: {size: 8}, // Size of the markers
+                    line: {width: 2} // Width of the lines
+                    };
+                    traces.push(trace);
+                }
+                let layout = {
+                    title: 'Language Use Over Time',
+                    xaxis: {
+                        title: 'Date',
+                        showgrid: false,
+                        zeroline: false
+                    },
+                    yaxis: {
+                        title: 'Commits',
+                        showline: false
+                    },
+                    legend: {"orientation": "h"} // Horizontal legend at the top
+                };
+
+                Plotly.newPlot('languageChart', traces);
+            </script>
+        </div>
+    </div>      
+</div>
+<div class="tab-pane fade" id="collaborators" role="tabpanel">
+    <!--Collaboration Graph-->
+    <div style="display: flex; justify-content: center;">       
+        <div id="collabNetwork" style="width: 1000px; height: 800px; margin-top: 50px;"></div>
+    </div>
+</div>
+<div class="tab-pane fade" id="roles-tasks" role="tabpanel">
+    <div class="row">
+        <!-- Job Role -->
+        <div class="col-6 d-flex flex-column justify-content-center align-items-center">
+            <div class="card bg-light border-dark text-dark p-3" style="width: 22rem;">
+                {% if profile['job_role'] == 'Frontend' %}
+                    <img src="/static/images/frontend.jpg" class="card-img-top" alt="Frontend Developer">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: Frontend Developer</h5>
+                        <p class="card-text">Specializes in building the user interface and user experience of an application.</p>
+                    </div>
+                {% elif profile['job_role'] == 'Backend' %}
+                    <img src="/static/images/backend.jpg" class="card-img-top" alt="Backend Developer">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: Backend Developer</h5>
+                        <p class="card-text">Focuses on constructing the server-side logic and database interaction of applications.</p>
+                    </div>        
+                {% elif profile['job_role'] == 'Mobile' %}
+                    <img src="/static/images/mobile.jpg" class="card-img-top" alt="Mobile Developer">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: Mobile Developer</h5>
+                        <p class="card-text">Develops dynamic and user-friendly applications for various mobile platforms.</p>
+                    </div>
+                {% elif profile['job_role'] == 'DevOps' %}
+                    <img src="/static/images/devops.jpg" class="card-img-top" alt="DevOps">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: DevOps</h5>
+                        <p class="card-text">Concentrates on optimizing system infrastructure and streamlining software development and deployment processes.</p>
+                    </div>        
+                {% elif profile['job_role'] == 'DataScientist' %}
+                    <img src="/static/images/datascientist.jpg" class="card-img-top" alt="Data Scientist">
+                    <div class="card-body">
+                        <h5 class="card-title">Predicted Job Role: Data Scientist</h5>
+                        <p class="card-text">Analyses complex datasets to extract insights and influence strategic decisions.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    
+    
+        <!-- Task Categories -->
+        
+        <div class="col-6 d-flex flex-column justify-content-center align-items-center">
+            <h2 class="mt-4" style="text-align:left;">Developer Task Distribution</h2>
+            <div style="width: 100%; height:600px;">
+                <canvas id="taskChart"></canvas>
+            </div>
+            <script>
+                // Fetch the profileData from the Flask template
+                var taskCategories =  profileData['task_categories'];
+                var taskLabels = Object.keys(taskCategories);
+                var taskData = Object.values(taskCategories);
+
+                // Get indices of 'Unknown' category
+                var unknownIndex = taskLabels.indexOf('Unknown');
+                if (unknownIndex > -1) {
+                    taskLabels.splice(unknownIndex, 1);
+                    taskData.splice(unknownIndex, 1);
+                }        
+                      
+                var ctx = document.getElementById('taskChart').getContext('2d');
+                var taskChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: taskLabels,
+                        datasets: [{
+                            label: 'Task Categories',
+                            data: taskData,
+                            backgroundColor: 'rgba(0, 255, 0, 0.2)', // Semi-transparent green
+                            borderColor: 'green',
+                            pointBackgroundColor: 'green'
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        scales: {
+                            r: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            </script>                        
+            <p class="text-muted small">Please note: These categories are predicted using a machine learning model and might not be 100% accurate.</p>
+        </div> 
+    </div>
+</div>
+
+{% endblock %}
